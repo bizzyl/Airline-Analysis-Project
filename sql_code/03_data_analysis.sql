@@ -75,9 +75,8 @@ ORDER BY dow_num;
 
 --What percentage of flights experienced a departure delay?
 
-SELECT CONCAT(ROUND(CAST(SUM(CASE WHEN DEPARTURE_DELAY > 0 THEN 1
-	ELSE 0
-	END) AS FLOAT) / COUNT(DEPARTURE_DELAY) * 100, 2),'%') as total_perc_flights_delayed
+SELECT 
+CONCAT(ROUND(CAST(SUM(CASE WHEN DEPARTURE_DELAY > 0 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(DEPARTURE_DELAY) * 100, 2),'%') as total_perc_flights_delayed
 FROM dbo.flights
 ;
 
@@ -246,15 +245,15 @@ ORDER BY COUNT(FLIGHT_NUMBER) DESC;
 
 --Which airline has the highest cancellation rates
 WITH cancellation_rates as (
-SELECT AIRLINE_NAME, SUM(CANCELLED) as num_cancelled
+SELECT AIRLINE_NAME, SUM(CANCELLED) as num_cancelled, COUNT(FLIGHT_NUMBER) as total_flights
 FROM dbo.flights as f
 LEFT JOIN dbo.airlines as al
 ON f.AIRLINE_CODE = al.AIRLINE_CODE
 GROUP BY AIRLINE_NAME
 )
 SELECT AIRLINE_NAME, 
-num_cancelled,
-CONCAT(ROUND(CAST(num_cancelled AS FLOAT) * 100 / (SUM(num_cancelled) OVER()), 2), '%') as cancellation_rate
+num_cancelled, total_flights,
+CONCAT(ROUND(CAST(num_cancelled AS FLOAT) * 100 / total_flights, 2), '%') as cancellation_rate
 FROM cancellation_rates
 ORDER BY num_cancelled DESC;
 
@@ -342,7 +341,9 @@ ORDER BY avg_delay;
 --Which airports have the highest cancellation rates
 
 WITH cancellation_rates as (
-SELECT AIRPORT_NAME, SUM(CANCELLED) as num_cancelled
+SELECT AIRPORT_NAME, 
+SUM(CANCELLED) as num_cancelled,
+COUNT(FLIGHT_NUMBER) as total_flights
 FROM dbo.flights as f
 LEFT JOIN dbo.airports as ap
 ON f.ORIGIN_AIRPORT = ap.AIRPORT_CODE
@@ -351,6 +352,7 @@ HAVING AIRPORT_NAME IS NOT NULL
 )
 SELECT AIRPORT_NAME, 
 num_cancelled,
-CONCAT(ROUND(CAST(num_cancelled AS FLOAT) * 100 / (SUM(num_cancelled) OVER()), 2), '%') as cancellation_rate
+total_flights,
+CONCAT(ROUND(CAST(num_cancelled AS FLOAT) * 100 / total_flights, 2), '%') as cancellation_rate
 FROM cancellation_rates
-ORDER BY num_cancelled DESC;
+ORDER BY cancellation_rate DESC;
