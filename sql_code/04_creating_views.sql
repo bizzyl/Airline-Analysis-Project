@@ -174,3 +174,35 @@ FROM base_query
 
 SELECT * FROM airline_performance;
 
+CREATE VIEW overview AS 
+SELECT 
+COUNT(*) as total_flights,
+SUM(CANCELLED) as total_cancelled,
+SUM(CASE WHEN DEPARTURE_DELAY > 0 THEN 1 ELSE 0 END) AS total_delayed
+FROM dbo.flights
+
+--Delay reasons table
+CREATE VIEW delay_reasons AS 
+with delay_table as(
+SELECT 
+SUM(AIR_SYSTEM_DELAY) as air_system,
+SUM(SECURITY_DELAY) as security,
+SUM(AIRLINE_DELAY) as airline,
+SUM(LATE_AIRCRAFT_DELAY) as late_aircraft,
+SUM(WEATHER_DELAY) as weather
+FROM dbo.flights
+)
+
+SELECT 
+    delay_reason,
+    total_minutes_delayed
+FROM delay_table
+UNPIVOT (
+    total_minutes_delayed FOR delay_reason IN (
+        air_system,
+        security,
+        airline,
+        late_aircraft,
+        weather
+    )
+) AS unpvt;
